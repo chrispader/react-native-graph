@@ -27,9 +27,13 @@ interface GraphPathConfig {
    */
   points: GraphPoint[]
   /**
-   * Optional Padding (top, left, bottom, right) for the Graph to correctly round the Path.
+   * Optional Padding (left, right) for the Graph to correctly round the Path.
    */
-  graphPadding: number
+  horizontalPadding: number
+  /**
+   * Optional Padding (top, bottom) for the Graph to correctly round the Path.
+   */
+  verticalPadding: number
   /**
    * Height of the Canvas (Measured with onLayout)
    */
@@ -327,7 +331,8 @@ const PIXEL_RATIO = 2
 export function createGraphPath({
   points: graphData,
   range,
-  graphPadding,
+  horizontalPadding,
+  verticalPadding,
   canvasHeight: height,
   canvasWidth: width,
 }: GraphPathConfig): SkPath {
@@ -353,7 +358,6 @@ export function createGraphPath({
           (prev, curr) => (curr.value > prev ? curr.value : prev),
           Number.MIN_SAFE_INTEGER
         )
-
   const points: SkPoint[] = []
 
   let leftBoundary = 0
@@ -417,13 +421,14 @@ export function createGraphPath({
 
     if (value < minValueY || value > maxValueY) continue
     const x =
-      (pixel / actualWidth) * (actualWidth - 2 * graphPadding) + graphPadding
+      (pixel / actualWidth) * (actualWidth - 2 * horizontalPadding) +
+      horizontalPadding
 
     const y =
       height -
-      ((value - minValueY) / (maxValueY - minValueY)) *
-        (height - 2 * graphPadding)
-    graphPadding
+      (((value - minValueY) / (maxValueY - minValueY)) *
+        (height - 2 * verticalPadding) +
+        verticalPadding)
 
     points.push({ x: x, y: y })
   }
