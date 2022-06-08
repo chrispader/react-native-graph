@@ -26,6 +26,9 @@ import { GestureDetector } from 'react-native-gesture-handler'
 import { useHoldOrPanGesture } from './hooks/useHoldOrPanGesture'
 import { getYForX } from './GetYForX'
 
+const CIRCLE_RADIUS = 5
+const CIRCLE_RADIUS_MULTIPLIER = 5
+
 // weird rea type bug
 const ReanimatedView = Reanimated.View as any
 
@@ -39,8 +42,8 @@ export function AnimatedLineGraph({
   onPointSelected,
   onGestureStart,
   onGestureEnd,
-  horizontalPadding = 30,
-  verticalPadding = 30,
+  horizontalPadding = CIRCLE_RADIUS * CIRCLE_RADIUS_MULTIPLIER,
+  verticalPadding = CIRCLE_RADIUS * CIRCLE_RADIUS_MULTIPLIER,
   TopAxisLabel,
   BottomAxisLabel,
   selectionDotShadowColor,
@@ -56,7 +59,7 @@ export function AnimatedLineGraph({
   const pathEnd = useValue(0)
   const circleRadius = useValue(0)
   const circleStrokeRadius = useDerivedValue(
-    () => circleRadius.current * 6,
+    () => circleRadius.current * CIRCLE_RADIUS_MULTIPLIER,
     [circleRadius]
   )
 
@@ -95,10 +98,13 @@ export function AnimatedLineGraph({
 
     const path = createGraphPath({
       points: points,
+      range: range,
       horizontalPadding: lineThickness + horizontalPadding,
       verticalPadding: lineThickness + verticalPadding,
       canvasHeight: height,
       canvasWidth: width,
+      smoothing: 0,
+      strategy: 'complex',
     })
 
     const previous = paths.current
@@ -194,7 +200,7 @@ export function AnimatedLineGraph({
   )
   const setIsActive = useCallback(
     (active: boolean) => {
-      runSpring(circleRadius, active ? 5 : 0, {
+      runSpring(circleRadius, active ? CIRCLE_RADIUS : 0, {
         mass: 1,
         stiffness: 1000,
         damping: 50,

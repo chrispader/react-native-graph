@@ -34,6 +34,8 @@ export function StaticLineGraph({
         canvasWidth: width,
         horizontalPadding: lineThickness,
         verticalPadding: lineThickness,
+        smoothing: 0.5,
+        strategy: 'complex',
       }),
     [height, lineThickness, points, range, width]
   )
