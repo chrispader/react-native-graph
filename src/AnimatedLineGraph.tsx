@@ -16,7 +16,12 @@ import {
   PathCommand,
 } from '@shopify/react-native-skia'
 import type { AnimatedLineGraphProps } from './LineGraphProps'
-import { createGraphPath } from './CreateGraphPath'
+import {
+  createGraphPath,
+  getGraphPathRange,
+  GraphPathRange,
+  pixelFactorX,
+} from './CreateGraphPath'
 import Reanimated, {
   runOnJS,
   useAnimatedReaction,
@@ -27,7 +32,7 @@ import { useHoldOrPanGesture } from './hooks/useHoldOrPanGesture'
 import { getYForX } from './GetYForX'
 
 const CIRCLE_RADIUS = 5
-const CIRCLE_RADIUS_MULTIPLIER = 5
+const CIRCLE_RADIUS_MULTIPLIER = 6
 
 // weird rea type bug
 const ReanimatedView = Reanimated.View as any
@@ -86,6 +91,11 @@ export function AnimatedLineGraph({
   const paths = useValue<{ from?: SkPath; to?: SkPath }>({})
   const commands = useRef<PathCommand[]>([])
 
+  const pathRange: GraphPathRange = useMemo(
+    () => getGraphPathRange(points, range),
+    [points, range]
+  )
+
   useEffect(() => {
     if (height < 1 || width < 1) {
       // view is not yet measured!
@@ -98,13 +108,11 @@ export function AnimatedLineGraph({
 
     const path = createGraphPath({
       points: points,
-      range: range,
+      range: pathRange,
       horizontalPadding: lineThickness + horizontalPadding,
       verticalPadding: lineThickness + verticalPadding,
       canvasHeight: height,
       canvasWidth: width,
-      smoothing: 0,
-      strategy: 'complex',
     })
 
     const previous = paths.current
@@ -141,6 +149,7 @@ export function AnimatedLineGraph({
     horizontalPadding,
     interpolateProgress,
     lineThickness,
+    pathRange,
     paths,
     points,
     range,
@@ -191,12 +200,28 @@ export function AnimatedLineGraph({
       }
       pathEnd.current = fingerX / width
 
-      const index = Math.round((fingerX / width) * points.length)
+      const lastPoint = points[points.length - 1]!
+
+      const index = Math.round(
+        (fingerX /
+          (width *
+            pixelFactorX(lastPoint.date, pathRange.x.min, pathRange.x.max))) *
+          points.length
+      )
       const pointIndex = Math.min(Math.max(index, 0), points.length - 1)
       const dataPoint = points[Math.round(pointIndex)]
       if (dataPoint != null) onPointSelected?.(dataPoint)
     },
-    [circleX, circleY, onPointSelected, pathEnd, points, width]
+    [
+      circleX,
+      circleY,
+      onPointSelected,
+      pathEnd,
+      pathRange.x.max,
+      pathRange.x.min,
+      points,
+      width,
+    ]
   )
   const setIsActive = useCallback(
     (active: boolean) => {
