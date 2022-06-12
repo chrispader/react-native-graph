@@ -66,7 +66,7 @@ export function AnimatedLineGraph({
   const { gesture, isActive, x } = useHoldOrPanGesture({ holdDuration: 300 })
   const circleX = useValue(0)
   const circleY = useValue(0)
-  const pathEnd = useValue(1)
+  const pathEnd = useValue(0)
   const circleRadius = useValue(0)
   const circleStrokeRadius = useDerivedValue(
     () => circleRadius.current * CIRCLE_RADIUS_MULTIPLIER,
@@ -234,18 +234,22 @@ export function AnimatedLineGraph({
 
   const setFingerX = useCallback(
     (fingerX: number) => {
+      const fingerXInRange = Math.min(
+        Math.max(fingerX, horizontalPadding + 1),
+        drawingWidth + horizontalPadding - 1
+      )
+      const y = getYForX(commands.current, fingerXInRange)
+
+      if (y != null) {
+        circleY.current = y
+        circleX.current = fingerXInRange
+      }
+
       if (
         fingerX > horizontalPadding &&
         fingerX < drawingWidth + horizontalPadding
-      ) {
-        const y = getYForX(commands.current, fingerX)
-
-        if (y != null) {
-          circleY.current = y
-          circleX.current = fingerX
-        }
+      )
         pathEnd.current = fingerX / width
-      }
 
       const actualFingerX = fingerX - 2 * horizontalPadding + horizontalPadding
 
@@ -309,6 +313,10 @@ export function AnimatedLineGraph({
 
   useValueEffect(paths, ({ from }) => {
     runOnJS(setIndicatorVisible)(from != null)
+  })
+
+  useValueEffect(pathEnd, (end) => {
+    runOnJS(console.log)(end)
   })
 
   return (
