@@ -138,8 +138,6 @@ export function AnimatedLineGraph({
     [indicatorX]
   )
 
-  console.log('indicator x', indicatorX)
-
   useEffect(() => {
     if (height < 1 || width < 1) {
       // view is not yet measured!
@@ -240,8 +238,6 @@ export function AnimatedLineGraph({
         fingerX > horizontalPadding &&
         fingerX < drawingWidth + horizontalPadding
       ) {
-        console.log('finger x', fingerX)
-
         const y = getYForX(commands.current, fingerX)
 
         if (y != null) {
