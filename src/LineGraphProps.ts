@@ -44,13 +44,17 @@ export type AnimatedLineGraphProps = BaseLineGraphProps & {
    */
   selectionDotShadowColor?: string
   /**
-   * Horizontal padding applied to graph, so the selectionDot doesn't get cut off horizontally
+   * Horizontal padding applied to graph, so the pan gesture dot doesn't get cut off horizontally
    */
   horizontalPadding?: number
   /**
-   * Vertical padding applied to graph, so the selectionDot doesn't get cut off vertically
+   * Vertical padding applied to graph, so the pan gesture dot doesn't get cut off vertically
    */
   verticalPadding?: number
+  /**
+   * Enables an indicator which is displayed at the end of the graph
+   */
+  alwaysShowIndicator?: boolean
 
   /**
    * Called for each point while the user is scrubbing/panning through the graph
