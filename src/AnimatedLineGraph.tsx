@@ -315,10 +315,6 @@ export function AnimatedLineGraph({
     runOnJS(setIndicatorVisible)(from != null)
   })
 
-  useValueEffect(pathEnd, (end) => {
-    runOnJS(console.log)(end)
-  })
-
   return (
     <View {...props}>
       <GestureDetector gesture={enablePanGesture ? gesture : undefined}>
