@@ -119,9 +119,12 @@ export function AnimatedLineGraph({
   const drawingWidth = useMemo(() => {
     const lastPoint = points[points.length - 1]!
 
-    return (
-      (width - 2 * horizontalPadding) *
-      pixelFactorX(lastPoint.date, pathRange.x.min, pathRange.x.max)
+    return Math.max(
+      Math.floor(
+        (width - 2 * horizontalPadding) *
+          pixelFactorX(lastPoint.date, pathRange.x.min, pathRange.x.max)
+      ),
+      0
     )
   }, [horizontalPadding, pathRange.x.max, pathRange.x.min, points, width])
 
@@ -186,15 +189,12 @@ export function AnimatedLineGraph({
       }
     )
   }, [
-    circleStrokeRadius,
     height,
     horizontalPadding,
     interpolateProgress,
-    lineThickness,
     pathRange,
     paths,
     points,
-    range,
     straightLine,
     verticalPadding,
     width,
@@ -263,6 +263,7 @@ export function AnimatedLineGraph({
     [
       circleX,
       circleY,
+      commands,
       drawingWidth,
       horizontalPadding,
       onPointSelected,
@@ -287,6 +288,7 @@ export function AnimatedLineGraph({
         velocity: 0,
       })
 
+      console.log(active)
       if (!active) pathEnd.current = 1
 
       if (active) onGestureStart?.()
