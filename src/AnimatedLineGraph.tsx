@@ -110,6 +110,7 @@ export function AnimatedLineGraph({
 
   const paths = useValue<{ from?: SkPath; to?: SkPath }>({})
   const commands = useRef<PathCommand[]>([])
+  const [commandsChanged, setCommandsChanged] = useState(0)
 
   const pathRange: GraphPathRange = useMemo(
     () => getGraphPathRange(points, range),
@@ -130,15 +131,17 @@ export function AnimatedLineGraph({
 
   const indicatorX = useMemo(
     () =>
-      indicatorVisible
+      commandsChanged >= 0 && indicatorVisible
         ? Math.floor(drawingWidth) + horizontalPadding
         : undefined,
-    [drawingWidth, horizontalPadding, indicatorVisible]
+    [commandsChanged, drawingWidth, horizontalPadding, indicatorVisible]
   )
   const indicatorY = useMemo(
     () =>
-      indicatorX != null ? getYForX(commands.current, indicatorX) : undefined,
-    [indicatorX]
+      commandsChanged >= 0 && indicatorX != null
+        ? getYForX(commands.current, indicatorX)
+        : undefined,
+    [commandsChanged, indicatorX]
   )
 
   useEffect(() => {
@@ -160,6 +163,8 @@ export function AnimatedLineGraph({
       canvasWidth: width,
     })
 
+    commands.current = path.toCmds()
+
     const previous = paths.current
     let from: SkPath = previous.to ?? straightLine
     if (previous.from != null && interpolateProgress.current < 1)
@@ -176,7 +181,8 @@ export function AnimatedLineGraph({
         to: path,
       }
     }
-    commands.current = path.toCmds()
+
+    setCommandsChanged(commandsChanged + 1)
 
     runSpring(
       interpolateProgress,
@@ -188,6 +194,7 @@ export function AnimatedLineGraph({
         velocity: 0,
       }
     )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     height,
     horizontalPadding,
