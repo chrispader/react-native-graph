@@ -295,9 +295,6 @@ export function AnimatedLineGraph({
         velocity: 0,
       })
 
-      console.log(active)
-      if (!active) pathEnd.current = 1
-
       if (active) onGestureStart?.()
       else onGestureEnd?.()
     },
