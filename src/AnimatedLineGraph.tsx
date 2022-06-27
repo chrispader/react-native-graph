@@ -298,7 +298,7 @@ export function AnimatedLineGraph({
       if (active) onGestureStart?.()
       else onGestureEnd?.()
     },
-    [circleRadius, indicatorRadius, onGestureEnd, onGestureStart, pathEnd]
+    [circleRadius, indicatorRadius, onGestureEnd, onGestureStart]
   )
 
   useAnimatedReaction(
