@@ -31,6 +31,7 @@ import Reanimated, {
   withTiming,
   useSharedValue,
   useDerivedValue as useDerivedValueREA,
+  withSequence,
 } from 'react-native-reanimated'
 import { getSixDigitHex } from './utils/getSixDigitHex'
 import { GestureDetector } from 'react-native-gesture-handler'
@@ -42,8 +43,10 @@ const CIRCLE_RADIUS = 5
 const CIRCLE_RADIUS_MULTIPLIER = 6
 const INDICATOR_RADIUS = 7
 const INDICATOR_BORDER_MULTIPLIER = 1.3
-const INDICATOR_PULSE_BLUR_RADIUS_SMALL = INDICATOR_RADIUS
-const INDICATOR_PULSE_BLUR_RADIUS_BIG = INDICATOR_RADIUS + 5
+const INDICATOR_PULSE_BLUR_RADIUS_SMALL =
+  INDICATOR_RADIUS * INDICATOR_BORDER_MULTIPLIER
+const INDICATOR_PULSE_BLUR_RADIUS_BIG =
+  INDICATOR_RADIUS * INDICATOR_BORDER_MULTIPLIER + 10
 
 // weird rea type bug
 const ReanimatedView = Reanimated.View as any
@@ -92,6 +95,7 @@ export function AnimatedLineGraph({
   }, [])
   const indicatorPulseAnimation = useSharedValue(0)
   const indicatorPulseRadius = useValue(INDICATOR_PULSE_BLUR_RADIUS_SMALL)
+  const indicatorPulseOpacity = useValue(1)
 
   const positions = useDerivedValue(
     () => [
@@ -345,12 +349,16 @@ export function AnimatedLineGraph({
   useEffect(() => {
     if (indicatorPulsating) {
       indicatorPulseAnimation.value = withRepeat(
-        withTiming(1, { duration: 700 }),
-        -1,
-        true
+        withSequence(
+          withTiming(1, { duration: 700 }),
+          withTiming(0, { duration: 0 }), // delay between pulses
+          withTiming(1, { duration: 700 }),
+          withTiming(1, { duration: 2000 }) // delay after both pulses
+        ),
+        -1
       )
     }
-  }, [indicatorPulsating, indicatorPulseAnimation, indicatorPulseRadius])
+  }, [indicatorPulsating, indicatorPulseAnimation])
 
   useSharedValueEffect(
     () => {
@@ -360,6 +368,7 @@ export function AnimatedLineGraph({
           INDICATOR_PULSE_BLUR_RADIUS_SMALL,
           INDICATOR_PULSE_BLUR_RADIUS_BIG
         )
+        indicatorPulseOpacity.current = mix(indicatorPulseAnimation.value, 1, 0)
       } else {
         indicatorPulseRadius.current = 0
       }
@@ -426,15 +435,10 @@ export function AnimatedLineGraph({
                       cx={indicatorX}
                       cy={indicatorY}
                       r={indicatorPulseRadius}
-                    >
-                      <Shadow
-                        dx={0}
-                        dy={0}
-                        color={indicatorPulseColor}
-                        blur={3}
-                        shadowOnly={true}
-                      />
-                    </Circle>
+                      opacity={indicatorPulseOpacity}
+                      color={indicatorPulseColor}
+                      style="fill"
+                    />
                   )}
 
                   <Circle
