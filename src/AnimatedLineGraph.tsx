@@ -32,6 +32,7 @@ import Reanimated, {
   useSharedValue,
   useDerivedValue as useDerivedValueREA,
   withSequence,
+  cancelAnimation,
 } from 'react-native-reanimated'
 import { getSixDigitHex } from './utils/getSixDigitHex'
 import { GestureDetector } from 'react-native-gesture-handler'
@@ -46,7 +47,7 @@ const INDICATOR_BORDER_MULTIPLIER = 1.3
 const INDICATOR_PULSE_BLUR_RADIUS_SMALL =
   INDICATOR_RADIUS * INDICATOR_BORDER_MULTIPLIER
 const INDICATOR_PULSE_BLUR_RADIUS_BIG =
-  INDICATOR_RADIUS * INDICATOR_BORDER_MULTIPLIER + 10
+  INDICATOR_RADIUS * INDICATOR_BORDER_MULTIPLIER + 20
 
 // weird rea type bug
 const ReanimatedView = Reanimated.View as any
@@ -261,6 +262,21 @@ export function AnimatedLineGraph({
     [interpolateProgress]
   )
 
+  const startPulseAnimation = useCallback(
+    () =>
+      (indicatorPulseAnimation.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1100 }),
+          withTiming(0, { duration: 0 }), // revert to 0
+          withTiming(0, { duration: 1200 }), // delay between pulses
+          withTiming(1, { duration: 1100 }),
+          withTiming(1, { duration: 3000 }) // delay after both pulses
+        ),
+        -1
+      )),
+    [indicatorPulseAnimation]
+  )
+
   const setFingerX = useCallback(
     (fingerX: number) => {
       const fingerXInRange = Math.min(
@@ -301,6 +317,7 @@ export function AnimatedLineGraph({
       width,
     ]
   )
+
   const setIsActive = useCallback(
     (active: boolean) => {
       runSpring(circleRadius, active ? CIRCLE_RADIUS : 0, {
@@ -317,12 +334,23 @@ export function AnimatedLineGraph({
         velocity: 0,
       })
 
-      if (!active) pathEnd.current = 1
+      if (!active) {
+        pathEnd.current = 1
+
+        startPulseAnimation()
+      }
 
       if (active) onGestureStart?.()
       else onGestureEnd?.()
     },
-    [circleRadius, indicatorRadius, onGestureEnd, onGestureStart, pathEnd]
+    [
+      circleRadius,
+      indicatorRadius,
+      onGestureEnd,
+      onGestureStart,
+      pathEnd,
+      startPulseAnimation,
+    ]
   )
 
   useAnimatedReaction(
@@ -348,18 +376,9 @@ export function AnimatedLineGraph({
 
   useEffect(() => {
     if (indicatorPulsating) {
-      indicatorPulseAnimation.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 1100 }),
-          withTiming(0, { duration: 0 }), // revert to 0
-          withTiming(0, { duration: 1200 }), // delay between pulses
-          withTiming(1, { duration: 1100 }),
-          withTiming(1, { duration: 3000 }) // delay after both pulses
-        ),
-        -1
-      )
+      startPulseAnimation()
     }
-  }, [indicatorPulsating, indicatorPulseAnimation])
+  }, [indicatorPulsating, indicatorPulseAnimation, startPulseAnimation])
 
   useSharedValueEffect(
     () => {
@@ -371,6 +390,7 @@ export function AnimatedLineGraph({
         )
         indicatorPulseOpacity.current = mix(indicatorPulseAnimation.value, 1, 0)
       } else {
+        cancelAnimation(indicatorPulseAnimation)
         indicatorPulseRadius.current = 0
       }
     },
