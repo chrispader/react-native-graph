@@ -33,6 +33,7 @@ import Reanimated, {
   useDerivedValue as useDerivedValueREA,
   withSequence,
   cancelAnimation,
+  withDelay,
 } from 'react-native-reanimated'
 import { getSixDigitHex } from './utils/getSixDigitHex'
 import { GestureDetector } from 'react-native-gesture-handler'
@@ -262,20 +263,27 @@ export function AnimatedLineGraph({
     [interpolateProgress]
   )
 
-  const startPulseAnimation = useCallback(
-    () =>
-      (indicatorPulseAnimation.value = withRepeat(
+  const stopPulsating = useCallback(() => {
+    cancelAnimation(indicatorPulseAnimation)
+    indicatorPulseAnimation.value = 0
+  }, [indicatorPulseAnimation])
+
+  const startPulsating = useCallback(() => {
+    stopPulsating()
+    indicatorPulseAnimation.value = withRepeat(
+      withDelay(
+        1000,
         withSequence(
           withTiming(1, { duration: 1100 }),
           withTiming(0, { duration: 0 }), // revert to 0
           withTiming(0, { duration: 1200 }), // delay between pulses
           withTiming(1, { duration: 1100 }),
-          withTiming(1, { duration: 3000 }) // delay after both pulses
-        ),
-        -1
-      )),
-    [indicatorPulseAnimation]
-  )
+          withTiming(1, { duration: 2000 }) // delay after both pulses
+        )
+      ),
+      -1
+    )
+  }, [indicatorPulseAnimation, stopPulsating])
 
   const setFingerX = useCallback(
     (fingerX: number) => {
@@ -337,11 +345,14 @@ export function AnimatedLineGraph({
       if (!active) {
         pathEnd.current = 1
 
-        startPulseAnimation()
+        startPulsating()
       }
 
-      if (active) onGestureStart?.()
-      else onGestureEnd?.()
+      if (active) {
+        onGestureStart?.()
+
+        stopPulsating()
+      } else onGestureEnd?.()
     },
     [
       circleRadius,
@@ -349,7 +360,8 @@ export function AnimatedLineGraph({
       onGestureEnd,
       onGestureStart,
       pathEnd,
-      startPulseAnimation,
+      startPulsating,
+      stopPulsating,
     ]
   )
 
@@ -376,9 +388,10 @@ export function AnimatedLineGraph({
 
   useEffect(() => {
     if (indicatorPulsating) {
-      startPulseAnimation()
+      startPulsating()
     }
-  }, [indicatorPulsating, indicatorPulseAnimation, startPulseAnimation])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [indicatorPulsating])
 
   useSharedValueEffect(
     () => {
@@ -390,7 +403,6 @@ export function AnimatedLineGraph({
         )
         indicatorPulseOpacity.current = mix(indicatorPulseAnimation.value, 1, 0)
       } else {
-        cancelAnimation(indicatorPulseAnimation)
         indicatorPulseRadius.current = 0
       }
     },
