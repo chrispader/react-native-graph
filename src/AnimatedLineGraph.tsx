@@ -350,10 +350,11 @@ export function AnimatedLineGraph({
     if (indicatorPulsating) {
       indicatorPulseAnimation.value = withRepeat(
         withSequence(
-          withTiming(1, { duration: 700 }),
-          withTiming(0, { duration: 0 }), // delay between pulses
-          withTiming(1, { duration: 700 }),
-          withTiming(1, { duration: 2000 }) // delay after both pulses
+          withTiming(1, { duration: 1100 }),
+          withTiming(0, { duration: 0 }), // revert to 0
+          withTiming(0, { duration: 1200 }), // delay between pulses
+          withTiming(1, { duration: 1100 }),
+          withTiming(1, { duration: 3000 }) // delay after both pulses
         ),
         -1
       )
