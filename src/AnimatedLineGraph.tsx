@@ -269,7 +269,6 @@ export function AnimatedLineGraph({
   }, [indicatorPulseAnimation])
 
   const startPulsating = useCallback(() => {
-    stopPulsating()
     indicatorPulseAnimation.value = withRepeat(
       withDelay(
         1000,
@@ -283,7 +282,7 @@ export function AnimatedLineGraph({
       ),
       -1
     )
-  }, [indicatorPulseAnimation, stopPulsating])
+  }, [indicatorPulseAnimation])
 
   const setFingerX = useCallback(
     (fingerX: number) => {
