@@ -8,14 +8,13 @@ import {
   Path,
   Skia,
   useValue,
-  useDerivedValue,
   vec,
   Circle,
   Group,
   Shadow,
   PathCommand,
-  useValueEffect,
   useSharedValueEffect,
+  useDerivedValue,
   mix,
 } from '@shopify/react-native-skia'
 import type { AnimatedLineGraphProps } from './LineGraphProps'
@@ -28,9 +27,10 @@ import {
 import Reanimated, {
   runOnJS,
   useAnimatedReaction,
-  useSharedValue,
   withRepeat,
   withTiming,
+  useSharedValue,
+  useDerivedValue as useDerivedValueREA,
 } from 'react-native-reanimated'
 import { getSixDigitHex } from './utils/getSixDigitHex'
 import { GestureDetector } from 'react-native-gesture-handler'
@@ -70,7 +70,6 @@ export function AnimatedLineGraph({
   const [width, setWidth] = useState(0)
   const [height, setHeight] = useState(0)
   const interpolateProgress = useValue(0)
-  const [indicatorVisible, setIndicatorVisible] = useState(false)
 
   const { gesture, isActive, x } = useHoldOrPanGesture({ holdDuration: 300 })
   const circleX = useValue(0)
@@ -87,10 +86,12 @@ export function AnimatedLineGraph({
     [indicatorRadius]
   )
 
+  const isActiveNumber = useDerivedValueREA(() => {
+    'worklet'
+    return isActive.value ? 1 : 0
+  }, [])
   const indicatorPulseAnimation = useSharedValue(0)
-  const indicatorPulseBlur = useValue(
-    indicatorPulsating ? INDICATOR_PULSE_BLUR_RADIUS_SMALL : 0
-  )
+  const indicatorPulseRadius = useValue(INDICATOR_PULSE_BLUR_RADIUS_SMALL)
 
   const positions = useDerivedValue(
     () => [
@@ -146,10 +147,10 @@ export function AnimatedLineGraph({
 
   const indicatorX = useMemo(
     () =>
-      commandsChanged >= 0 && indicatorVisible
+      commandsChanged >= 0
         ? Math.floor(drawingWidth) + horizontalPadding
         : undefined,
-    [commandsChanged, drawingWidth, horizontalPadding, indicatorVisible]
+    [commandsChanged, drawingWidth, horizontalPadding]
   )
   const indicatorY = useMemo(
     () =>
@@ -336,10 +337,6 @@ export function AnimatedLineGraph({
     [isActive, setIsActive]
   )
 
-  useValueEffect(paths, ({ from }) => {
-    runOnJS(setIndicatorVisible)(from != null)
-  })
-
   useEffect(() => {
     if (points.length !== 0 && commands.current.length !== 0)
       pathEnd.current = 1
@@ -353,15 +350,23 @@ export function AnimatedLineGraph({
         true
       )
     }
-  }, [indicatorPulsating, indicatorPulseAnimation])
+  }, [indicatorPulsating, indicatorPulseAnimation, indicatorPulseRadius])
 
-  useSharedValueEffect(() => {
-    indicatorPulseBlur.current = mix(
-      indicatorPulseAnimation.value,
-      INDICATOR_PULSE_BLUR_RADIUS_SMALL,
-      INDICATOR_PULSE_BLUR_RADIUS_BIG
-    )
-  }, indicatorPulseAnimation)
+  useSharedValueEffect(
+    () => {
+      if (isActiveNumber.value === 0) {
+        indicatorPulseRadius.current = mix(
+          indicatorPulseAnimation.value,
+          INDICATOR_PULSE_BLUR_RADIUS_SMALL,
+          INDICATOR_PULSE_BLUR_RADIUS_BIG
+        )
+      } else {
+        indicatorPulseRadius.current = 0
+      }
+    },
+    indicatorPulseAnimation,
+    isActiveNumber
+  )
 
   return (
     <View {...props}>
@@ -414,13 +419,13 @@ export function AnimatedLineGraph({
                 </Group>
               )}
 
-              {alwaysShowIndicator && indicatorVisible && (
+              {alwaysShowIndicator && (
                 <Group>
                   {indicatorPulsating && (
                     <Circle
                       cx={indicatorX}
                       cy={indicatorY}
-                      r={indicatorPulseBlur}
+                      r={indicatorPulseRadius}
                     >
                       <Shadow
                         dx={0}
