@@ -15,6 +15,8 @@ import {
   Shadow,
   PathCommand,
   useValueEffect,
+  useSharedValueEffect,
+  mix,
 } from '@shopify/react-native-skia'
 import type { AnimatedLineGraphProps } from './LineGraphProps'
 import {
@@ -26,16 +28,22 @@ import {
 import Reanimated, {
   runOnJS,
   useAnimatedReaction,
+  useSharedValue,
+  withRepeat,
+  withTiming,
 } from 'react-native-reanimated'
 import { getSixDigitHex } from './utils/getSixDigitHex'
 import { GestureDetector } from 'react-native-gesture-handler'
 import { useHoldOrPanGesture } from './hooks/useHoldOrPanGesture'
 import { getYForX } from './GetYForX'
+import { hexToRgba } from './utils/hexToRgba'
 
 const CIRCLE_RADIUS = 5
 const CIRCLE_RADIUS_MULTIPLIER = 6
 const INDICATOR_RADIUS = 7
 const INDICATOR_BORDER_MULTIPLIER = 1.3
+const INDICATOR_PULSE_BLUR_RADIUS_SMALL = INDICATOR_RADIUS
+const INDICATOR_PULSE_BLUR_RADIUS_BIG = INDICATOR_RADIUS + 5
 
 // weird rea type bug
 const ReanimatedView = Reanimated.View as any
@@ -51,6 +59,7 @@ export function AnimatedLineGraph({
   onGestureStart,
   onGestureEnd,
   alwaysShowIndicator = false,
+  indicatorPulsating = false,
   horizontalPadding = CIRCLE_RADIUS * CIRCLE_RADIUS_MULTIPLIER,
   verticalPadding = lineThickness + CIRCLE_RADIUS * CIRCLE_RADIUS_MULTIPLIER,
   TopAxisLabel,
@@ -77,6 +86,12 @@ export function AnimatedLineGraph({
     () => indicatorRadius.current * INDICATOR_BORDER_MULTIPLIER,
     [indicatorRadius]
   )
+
+  const indicatorPulseAnimation = useSharedValue(0)
+  const indicatorPulseBlur = useValue(
+    indicatorPulsating ? INDICATOR_PULSE_BLUR_RADIUS_SMALL : 0
+  )
+
   const positions = useDerivedValue(
     () => [
       0,
@@ -143,6 +158,8 @@ export function AnimatedLineGraph({
         : undefined,
     [commandsChanged, indicatorX]
   )
+
+  const indicatorPulseColor = useMemo(() => hexToRgba(color, 0.4), [color])
 
   useEffect(() => {
     if (height < 1 || width < 1) {
@@ -328,6 +345,24 @@ export function AnimatedLineGraph({
       pathEnd.current = 1
   }, [commands, pathEnd, points.length])
 
+  useEffect(() => {
+    if (indicatorPulsating) {
+      indicatorPulseAnimation.value = withRepeat(
+        withTiming(1, { duration: 700 }),
+        -1,
+        true
+      )
+    }
+  }, [indicatorPulsating, indicatorPulseAnimation])
+
+  useSharedValueEffect(() => {
+    indicatorPulseBlur.current = mix(
+      indicatorPulseAnimation.value,
+      INDICATOR_PULSE_BLUR_RADIUS_SMALL,
+      INDICATOR_PULSE_BLUR_RADIUS_BIG
+    )
+  }, indicatorPulseAnimation)
+
   return (
     <View {...props}>
       <GestureDetector gesture={enablePanGesture ? gesture : undefined}>
@@ -381,6 +416,22 @@ export function AnimatedLineGraph({
 
               {alwaysShowIndicator && indicatorVisible && (
                 <Group>
+                  {indicatorPulsating && (
+                    <Circle
+                      cx={indicatorX}
+                      cy={indicatorY}
+                      r={indicatorPulseBlur}
+                    >
+                      <Shadow
+                        dx={0}
+                        dy={0}
+                        color={indicatorPulseColor}
+                        blur={3}
+                        shadowOnly={true}
+                      />
+                    </Circle>
+                  )}
+
                   <Circle
                     cx={indicatorX}
                     cy={indicatorY}
