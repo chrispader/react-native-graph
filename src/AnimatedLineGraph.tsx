@@ -295,10 +295,12 @@ export function AnimatedLineGraph({
         velocity: 0,
       })
 
+      if (!active) pathEnd.current = 1
+
       if (active) onGestureStart?.()
       else onGestureEnd?.()
     },
-    [circleRadius, indicatorRadius, onGestureEnd, onGestureStart]
+    [circleRadius, indicatorRadius, onGestureEnd, onGestureStart, pathEnd]
   )
 
   useAnimatedReaction(
