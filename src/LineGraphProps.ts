@@ -7,13 +7,15 @@ export interface GraphPoint {
   date: Date
 }
 
+export type GraphRange = Partial<GraphPathRange>
+
 interface BaseLineGraphProps extends ViewProps {
   /**
    * All points to be marked in the graph. Coordinate system will adjust to scale automatically.
    */
   points: GraphPoint[]
 
-  range?: GraphPathRange
+  range?: GraphRange
   /**
    * Color of the graph line (path)
    */

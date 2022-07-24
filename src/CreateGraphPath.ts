@@ -4,7 +4,7 @@ import {
   Vector,
   cartesian2Polar,
 } from '@shopify/react-native-skia'
-import type { GraphPoint } from './LineGraphProps'
+import type { GraphPoint, GraphRange } from './LineGraphProps'
 import { createSplineFunction } from './Maths'
 
 export interface GraphXRange {
@@ -74,7 +74,7 @@ export const controlPoint = (
 
 export function getGraphPathRange(
   points: GraphPoint[],
-  range?: GraphPathRange
+  range?: GraphRange
 ): GraphPathRange {
   const minValueX = range?.x?.min ?? points[0]!.date
   const maxValueX = range?.x?.max ?? points[points.length - 1]!.date
