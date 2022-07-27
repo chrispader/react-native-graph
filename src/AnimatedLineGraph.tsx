@@ -8,13 +8,13 @@ import {
   Path,
   Skia,
   useValue,
+  useComputedValue,
   vec,
   Circle,
   Group,
   Shadow,
   PathCommand,
   useSharedValueEffect,
-  useDerivedValue,
   mix,
 } from '@shopify/react-native-skia'
 import type { AnimatedLineGraphProps } from './LineGraphProps'
@@ -30,7 +30,7 @@ import Reanimated, {
   withRepeat,
   withTiming,
   useSharedValue,
-  useDerivedValue as useDerivedValueREA,
+  useDerivedValue,
   withSequence,
   cancelAnimation,
   withDelay,
@@ -81,17 +81,17 @@ export function AnimatedLineGraph({
   const circleY = useValue(0)
   const pathEnd = useValue(0)
   const circleRadius = useValue(0)
-  const circleStrokeRadius = useDerivedValue(
+  const circleStrokeRadius = useComputedValue(
     () => circleRadius.current * CIRCLE_RADIUS_MULTIPLIER,
     [circleRadius]
   )
   const indicatorRadius = useValue(alwaysShowIndicator ? INDICATOR_RADIUS : 0)
-  const indicatorBorderRadius = useDerivedValue(
+  const indicatorBorderRadius = useComputedValue(
     () => indicatorRadius.current * INDICATOR_BORDER_MULTIPLIER,
     [indicatorRadius]
   )
 
-  const isActiveNumber = useDerivedValueREA(() => {
+  const isActiveNumber = useDerivedValue(() => {
     'worklet'
     return isActive.value ? 1 : 0
   }, [])
@@ -99,7 +99,7 @@ export function AnimatedLineGraph({
   const indicatorPulseRadius = useValue(INDICATOR_PULSE_BLUR_RADIUS_SMALL)
   const indicatorPulseOpacity = useValue(1)
 
-  const positions = useDerivedValue(
+  const positions = useComputedValue(
     () => [
       0,
       Math.min(0.15, pathEnd.current),
@@ -192,7 +192,8 @@ export function AnimatedLineGraph({
     const previous = paths.current
     let from: SkPath = previous.to ?? straightLine
     if (previous.from != null && interpolateProgress.current < 1)
-      from = from.interpolate(previous.from, interpolateProgress.current)
+      from =
+        from.interpolate(previous.from, interpolateProgress.current) ?? from
 
     if (path.isInterpolatable(from)) {
       paths.current = {
@@ -251,7 +252,7 @@ export function AnimatedLineGraph({
     }
   }, [color, enableFadeInMask])
 
-  const path = useDerivedValue(
+  const path = useComputedValue(
     () => {
       const from = paths.current.from ?? straightLine
       const to = paths.current.to ?? straightLine
@@ -367,7 +368,9 @@ export function AnimatedLineGraph({
   useAnimatedReaction(
     () => x.value,
     (fingerX) => {
-      runOnJS(setFingerX)(fingerX)
+      if (isActive.value || fingerX) {
+        runOnJS(setFingerX)(fingerX)
+      }
     },
     [isActive, setFingerX, width, x]
   )
@@ -425,6 +428,7 @@ export function AnimatedLineGraph({
             <Canvas style={styles.svg}>
               <Group>
                 <Path
+                  // @ts-ignore
                   path={path}
                   strokeWidth={lineThickness}
                   style="stroke"
