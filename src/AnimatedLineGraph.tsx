@@ -37,7 +37,7 @@ import Reanimated, {
 } from 'react-native-reanimated'
 import { getSixDigitHex } from './utils/getSixDigitHex'
 import { GestureDetector } from 'react-native-gesture-handler'
-import { useHoldOrPanGesture } from './hooks/useHoldOrPanGesture'
+import { usePanGesture } from './hooks/usePanGesture'
 import { getYForX } from './GetYForX'
 import { hexToRgba } from './utils/hexToRgba'
 
@@ -76,7 +76,7 @@ export function AnimatedLineGraph({
   const [height, setHeight] = useState(0)
   const interpolateProgress = useValue(0)
 
-  const { gesture, isActive, x } = useHoldOrPanGesture({ holdDuration: 300 })
+  const { gesture, isActive, x } = usePanGesture({ holdDuration: 300 })
   const circleX = useValue(0)
   const circleY = useValue(0)
   const pathEnd = useValue(0)
