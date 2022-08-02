@@ -91,7 +91,7 @@ export function AnimatedLineGraph({
     [indicatorRadius]
   )
 
-  const isActiveNumber = useDerivedValue(() => {
+  const pulseTrigger = useDerivedValue(() => {
     'worklet'
     return isActive.value ? 1 : 0
   }, [])
@@ -392,7 +392,7 @@ export function AnimatedLineGraph({
 
   useSharedValueEffect(
     () => {
-      if (isActiveNumber.value === 0) {
+      if (pulseTrigger.value === 0) {
         indicatorPulseRadius.current = mix(
           indicatorPulseAnimation.value,
           INDICATOR_PULSE_BLUR_RADIUS_SMALL,
@@ -404,7 +404,7 @@ export function AnimatedLineGraph({
       }
     },
     indicatorPulseAnimation,
-    isActiveNumber
+    pulseTrigger
   )
 
   return (
