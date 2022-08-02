@@ -287,10 +287,10 @@ export function AnimatedLineGraph({
 
   const setFingerX = useCallback(
     (fingerX: number) => {
-      const fingerXInRange = Math.min(
-        Math.max(fingerX, horizontalPadding + 1),
-        drawingWidth + horizontalPadding - 1
-      )
+      const lowerBound = horizontalPadding
+      const upperBound = drawingWidth + horizontalPadding
+
+      const fingerXInRange = Math.min(Math.max(fingerX, lowerBound), upperBound)
       const y = getYForX(commands.current, fingerXInRange)
 
       if (y != null) {
@@ -298,17 +298,12 @@ export function AnimatedLineGraph({
         circleX.current = fingerXInRange
       }
 
-      if (
-        fingerX > horizontalPadding &&
-        fingerX < drawingWidth + horizontalPadding
-      )
+      if (fingerX > lowerBound && fingerX < upperBound && isActive.value)
         pathEnd.current = fingerX / width
 
-      const actualFingerX = fingerX - 2 * horizontalPadding + horizontalPadding
+      const actualFingerX = fingerX - horizontalPadding
 
-      const index = Math.round(
-        (actualFingerX / (drawingWidth + horizontalPadding)) * points.length
-      )
+      const index = Math.round((actualFingerX / upperBound) * points.length)
       const pointIndex = Math.min(Math.max(index, 0), points.length - 1)
       const dataPoint = points[pointIndex]
       if (dataPoint != null) onPointSelected?.(dataPoint)
@@ -316,9 +311,9 @@ export function AnimatedLineGraph({
     [
       circleX,
       circleY,
-      commands,
       drawingWidth,
       horizontalPadding,
+      isActive.value,
       onPointSelected,
       pathEnd,
       points,
@@ -342,17 +337,17 @@ export function AnimatedLineGraph({
         velocity: 0,
       })
 
-      if (!active) {
-        pathEnd.current = 1
-
-        startPulsating()
-      }
-
       if (active) {
         onGestureStart?.()
 
         stopPulsating()
-      } else onGestureEnd?.()
+      } else {
+        onGestureEnd?.()
+
+        pathEnd.current = 1
+
+        startPulsating()
+      }
     },
     [
       circleRadius,
