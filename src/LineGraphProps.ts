@@ -94,7 +94,7 @@ export type AnimatedLineGraphProps = BaseLineGraphProps & {
   /**
    * The element that renders the selection dot
    */
-  SelectionDot?: React.ComponentType<SelectionDotProps> | null
+  SelectionDot?: (props: SelectionDotProps) => JSX.Element | undefined
 
   /**
    * The element that gets rendered above the Graph (usually the "max" point/value of the Graph)

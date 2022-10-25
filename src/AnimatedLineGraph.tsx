@@ -503,15 +503,14 @@ export function AnimatedLineGraph({
                 )}
               </Group>
 
-              {SelectionDot != null && (
-                <SelectionDot
-                  isActive={isActive}
-                  color={primaryColor}
-                  lineThickness={lineThickness}
-                  circleX={circleX}
-                  circleY={circleY}
-                />
-              )}
+              {SelectionDot != null &&
+                SelectionDot({
+                  isActive,
+                  color: primaryColor,
+                  lineThickness,
+                  circleX,
+                  circleY,
+                })}
 
               {enableIndicator && (
                 <Group>

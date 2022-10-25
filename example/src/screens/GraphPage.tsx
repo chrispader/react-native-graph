@@ -99,7 +99,9 @@ export function GraphPage() {
         enablePanGesture={enablePanGesture}
         enableFadeInMask={enableFadeInEffect}
         onGestureStart={() => hapticFeedback('impactLight')}
-        SelectionDot={enableCustomSelectionDot ? SelectionDot : undefined}
+        SelectionDot={(props) =>
+          enableCustomSelectionDot ? <SelectionDot {...props} /> : undefined
+        }
         range={range}
         enableIndicator={enableIndicator}
         horizontalPadding={enableIndicator ? 15 : 0}
