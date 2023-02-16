@@ -46,7 +46,7 @@ type GraphPathConfig = {
   /**
    * Smoothing of the graph path (usually between 0.2 and 0.5)
    */
-  smoothing?: number
+  smoothing: number
   /**
    * Range of the graph's x and y-axis
    */
@@ -87,8 +87,9 @@ export function getGraphPathRange(
   points: GraphPoint[],
   range?: GraphRange
 ): GraphPathRange {
-  const minValueX = range?.x?.min ?? points[0]!.date
-  const maxValueX = range?.x?.max ?? points[points.length - 1]!.date
+  const minValueX = range?.x?.min ?? points[0]?.date ?? new Date()
+  const maxValueX =
+    range?.x?.max ?? points[points.length - 1]?.date ?? new Date()
 
   const minValueY =
     range?.y?.min ??
@@ -133,9 +134,6 @@ export const pixelFactorY = (
   return (y - minValue) / diff
 }
 
-// A Graph Point will be drawn every second "pixel"
-const PIXEL_RATIO = 2
-
 type GraphPathWithGradient = { path: SkPath; gradientPath: SkPath }
 
 function createGraphPathBase(
@@ -145,7 +143,7 @@ function createGraphPathBase(props: GraphPathConfigWithoutGradient): SkPath
 
 function createGraphPathBase({
   points,
-  smoothing = 0.2,
+  smoothing,
   range,
   horizontalPadding,
   verticalPadding,
@@ -160,14 +158,17 @@ function createGraphPathBase({
   const actualWidth = width - 2 * horizontalPadding
   const actualHeight = height - 2 * verticalPadding
 
+  const areSameValues = range.y.min === range.y.max
+
   const getGraphPoint = (point: GraphPoint): Vector => {
     const x =
       actualWidth * pixelFactorX(point.date, range.x.min, range.x.max) +
       horizontalPadding
-    const y =
-      actualHeight -
-      actualHeight * pixelFactorY(point.value, range.y.min, range.y.max) +
-      verticalPadding
+    const y = areSameValues
+      ? actualHeight / 2 + verticalPadding
+      : actualHeight -
+        actualHeight * pixelFactorY(point.value, range.y.min, range.y.max) +
+        verticalPadding
 
     return { x: x, y: y }
   }
@@ -219,13 +220,11 @@ function createGraphPathBase({
 
     // Calculates how many points between two points must be
     // calculated and drawn onto the canvas
-    const drawingFactor = pixelFactorX(
-      new Date(point.date.getTime() - prev.date.getTime()),
-      range.x.min,
-      range.x.max
-    )
+    const spanX = range.x.max.getTime() - range.x.min.getTime()
+    const deltaX = point.date.getTime() - prev.date.getTime()
+    const drawingFactor = deltaX / spanX
     const drawingPixels = actualWidth * drawingFactor + horizontalPadding
-    const numberOfDrawingPoints = Math.floor(drawingPixels / PIXEL_RATIO)
+    const numberOfDrawingPoints = Math.floor(drawingPixels)
 
     for (let i2 = 0; i2 <= numberOfDrawingPoints; i2++) {
       const p = splineFunction(i2 / numberOfDrawingPoints)

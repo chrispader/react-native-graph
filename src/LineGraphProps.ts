@@ -34,6 +34,10 @@ interface BaseLineGraphProps extends ViewProps {
    */
   color: string | string[]
   /**
+   * Smoothing value of the graph (Radius of the edge points)
+   */
+  smoothing?: number
+  /**
    * (Optional) Colors for the fill gradient below the graph line
    */
   gradientFillColors?: Color[]
@@ -77,6 +81,10 @@ export type AnimatedLineGraphProps = BaseLineGraphProps & {
    * Let's the indicator pulsate
    */
   indicatorPulsating?: boolean
+  /**
+   * Delay after which the pan gesture starts
+   */
+  panGestureDelay?: number
 
   /**
    * Called for each point while the user is scrubbing/panning through the graph

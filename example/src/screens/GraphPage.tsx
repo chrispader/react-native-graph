@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
-import { View, StyleSheet, Text, Button } from 'react-native'
+import { View, StyleSheet, Text, Button, ScrollView } from 'react-native'
 import { LineGraph } from 'react-native-graph'
 import StaticSafeAreaInsets from 'react-native-static-safe-area-insets'
 import type { GraphRange } from '../../../src/LineGraphProps'
@@ -55,7 +55,7 @@ export function GraphPage() {
       return {
         x: {
           min: points[0]!.date,
-          max: new Date(highestDate.getTime() + 30),
+          max: new Date(highestDate.getTime() + 50 * 1000 * 60 * 60 * 24),
         },
         y: {
           min: -200,
@@ -110,7 +110,10 @@ export function GraphPage() {
 
       <Button title="Refresh" onPress={refreshData} />
 
-      <View style={styles.controls}>
+      <ScrollView
+        style={styles.controlsScrollView}
+        contentContainerStyle={styles.controlsScrollViewContent}
+      >
         <Toggle
           title="Animated:"
           isEnabled={isAnimated}
@@ -156,7 +159,7 @@ export function GraphPage() {
           isEnabled={indicatorPulsating}
           setIsEnabled={setIndicatorPulsating}
         />
-      </View>
+      </ScrollView>
 
       <View style={styles.spacer} />
     </View>
@@ -192,9 +195,11 @@ const styles = StyleSheet.create({
     height: 35,
     marginLeft: 5,
   },
-  controls: {
+  controlsScrollView: {
     flexGrow: 1,
-    justifyContent: 'center',
     paddingHorizontal: 15,
+  },
+  controlsScrollViewContent: {
+    justifyContent: 'center',
   },
 })
