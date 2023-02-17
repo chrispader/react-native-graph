@@ -24,7 +24,8 @@ import {
   createGraphPathWithGradient,
   getGraphPathRange,
   GraphPathRange,
-  pixelFactorX,
+  getXInRange,
+  getPointsInRange,
 } from './CreateGraphPath'
 import Reanimated, {
   runOnJS,
@@ -51,7 +52,7 @@ const INDICATOR_PULSE_BLUR_RADIUS_BIG =
   INDICATOR_RADIUS * INDICATOR_BORDER_MULTIPLIER + 20
 
 export function AnimatedLineGraph({
-  points,
+  points: allPoints,
   color,
   smoothing = 0.2,
   gradientFillColors,
@@ -67,7 +68,7 @@ export function AnimatedLineGraph({
   enableIndicator = false,
   indicatorPulsating = false,
   horizontalPadding = enableIndicator
-    ? INDICATOR_RADIUS * INDICATOR_BORDER_MULTIPLIER
+    ? Math.ceil(INDICATOR_RADIUS * INDICATOR_BORDER_MULTIPLIER)
     : 0,
   verticalPadding = lineThickness,
   TopAxisLabel,
@@ -140,27 +141,27 @@ export function AnimatedLineGraph({
   const pointSelectedIndex = useRef<number>()
 
   const pathRange: GraphPathRange = useMemo(
-    () => getGraphPathRange(points, range),
-    [points, range]
+    () => getGraphPathRange(allPoints, range),
+    [allPoints, range]
   )
 
-  const drawingWidth = useMemo(() => {
-    return Math.max(Math.floor(width - 2 * horizontalPadding), 0)
-  }, [horizontalPadding, width])
+  const pointsInRange = useMemo(
+    () => getPointsInRange(allPoints, pathRange),
+    [allPoints, pathRange]
+  )
+
+  const drawingWidth = useMemo(
+    () => width - 2 * horizontalPadding,
+    [horizontalPadding, width]
+  )
 
   const lineWidth = useMemo(() => {
-    const lastPoint = points[points.length - 1]
+    const lastPoint = pointsInRange[pointsInRange.length - 1]
 
-    if (lastPoint == null) return width - 2 * horizontalPadding
+    if (lastPoint == null) return drawingWidth
 
-    return Math.max(
-      Math.floor(
-        (width - 2 * horizontalPadding) *
-          pixelFactorX(lastPoint.date, pathRange.x.min, pathRange.x.max)
-      ),
-      0
-    )
-  }, [horizontalPadding, pathRange.x.max, pathRange.x.min, points, width])
+    return Math.max(getXInRange(drawingWidth, lastPoint.date, pathRange.x), 0)
+  }, [drawingWidth, pathRange.x, pointsInRange])
 
   const indicatorX = useMemo(
     () =>
@@ -194,7 +195,7 @@ export function AnimatedLineGraph({
       // view is not yet measured!
       return
     }
-    if (points.length < 1) {
+    if (pointsInRange.length < 1) {
       // points are still empty!
       return
     }
@@ -203,7 +204,7 @@ export function AnimatedLineGraph({
     let gradientPath
 
     const createGraphPathProps = {
-      points: points,
+      pointsInRange: pointsInRange,
       range: pathRange,
       smoothing: smoothing,
       horizontalPadding: horizontalPadding,
@@ -283,7 +284,7 @@ export function AnimatedLineGraph({
     paths,
     shouldFillGradient,
     gradientPaths,
-    points,
+    pointsInRange,
     range,
     straightLine,
     verticalPadding,
@@ -359,28 +360,30 @@ export function AnimatedLineGraph({
 
   const setFingerX = useCallback(
     (fingerX: number) => {
-      const lowerBound = horizontalPadding
-      const upperBound = drawingWidth + horizontalPadding
-
-      const fingerXInRange = Math.min(Math.max(fingerX, lowerBound), upperBound)
-      const y = getYForX(commands.current, fingerXInRange)
+      const y = getYForX(commands.current, fingerX)
 
       if (y != null) {
+        circleX.current = fingerX
         circleY.current = y
-        circleX.current = fingerXInRange
       }
 
-      if (isActive.value) pathEnd.current = fingerXInRange / width
+      if (isActive.value) pathEnd.current = fingerX / width
 
-      const actualFingerX = fingerX - horizontalPadding
+      const fingerXInRange = Math.max(fingerX - horizontalPadding, 0)
 
       const index = Math.round(
-        (actualFingerX / drawingWidth) * (points.length - 1)
+        (fingerXInRange /
+          getXInRange(
+            drawingWidth,
+            pointsInRange[pointsInRange.length - 1]!.date,
+            pathRange.x
+          )) *
+          (pointsInRange.length - 1)
       )
-      const pointIndex = Math.min(Math.max(index, 0), points.length - 1)
+      const pointIndex = Math.min(Math.max(index, 0), pointsInRange.length - 1)
 
       if (pointSelectedIndex.current !== pointIndex) {
-        const dataPoint = points[pointIndex]
+        const dataPoint = pointsInRange[pointIndex]
         pointSelectedIndex.current = pointIndex
 
         if (dataPoint != null) {
@@ -396,7 +399,8 @@ export function AnimatedLineGraph({
       isActive.value,
       onPointSelected,
       pathEnd,
-      points,
+      pathRange.x,
+      pointsInRange,
       width,
     ]
   )
@@ -449,9 +453,9 @@ export function AnimatedLineGraph({
   )
 
   useEffect(() => {
-    if (points.length !== 0 && commands.current.length !== 0)
+    if (pointsInRange.length !== 0 && commands.current.length !== 0)
       pathEnd.current = 1
-  }, [commands, pathEnd, points.length])
+  }, [commands, pathEnd, pointsInRange.length])
 
   useEffect(() => {
     if (indicatorPulsating) {
